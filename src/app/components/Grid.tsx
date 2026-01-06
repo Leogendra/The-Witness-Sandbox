@@ -456,6 +456,7 @@ interface PieceOverlayProps {
 
 const PieceOverlay: React.FC<PieceOverlayProps> = ({ piece, cellSize, onRemove, onRotate }) => {
   const dragStartOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
   
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'tetromino',
@@ -496,6 +497,8 @@ const PieceOverlay: React.FC<PieceOverlayProps> = ({ piece, cellSize, onRemove, 
     <div
       ref={drag}
       onClick={handleClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className="absolute cursor-move z-30"
       style={{
         left: `${piece.col * cellSize + 8}px`,
@@ -503,6 +506,9 @@ const PieceOverlay: React.FC<PieceOverlayProps> = ({ piece, cellSize, onRemove, 
         width: `${width}px`,
         height: `${height}px`,
         opacity: isDragging ? 0.5 : 1,
+        boxShadow: isHovered ? 'inset 0 0 0 2px rgba(96, 165, 250, 0.8), 0 0 8px rgba(96, 165, 250, 0.6)' : 'none',
+        borderRadius: '4px',
+        transition: 'box-shadow 0.2s ease',
       }}
     />
   );
