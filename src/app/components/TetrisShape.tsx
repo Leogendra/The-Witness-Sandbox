@@ -38,6 +38,7 @@ interface TetrisShapeProps {
 export const TetrisShape = React.forwardRef<HTMLDivElement, TetrisShapeProps>(
     ({ type, color, pattern, pieceId, onRemove, onRotate, style }, forwardedRef) => {
         const dragStartOffsetRef = React.useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+        const [isHovered, setIsHovered] = React.useState(false);
 
         const [{ isDragging }, drag, preview] = useDrag(() => ({
         type: 'tetromino',
@@ -72,9 +73,10 @@ export const TetrisShape = React.forwardRef<HTMLDivElement, TetrisShapeProps>(
     return (
         <div
             ref={drag}
-            onClick={handleClick}
-            className="cursor-move inline-block p-0 bg-transparent rounded-none transition-colors"
-            style={{ opacity: isDragging ? 0.5 : 1, ...(style || {}) }}
+            className="inline-block p-0 bg-transparent rounded-none transition-colors relative"
+            style={{ opacity: isDragging ? 0.5 : 1, pointerEvents: 'none', ...(style || {}) }}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
         >
             <div className="flex flex-col gap-0.5" style={{ lineHeight: 0 }}>
                 {pattern.map((row, i) => (
@@ -83,16 +85,29 @@ export const TetrisShape = React.forwardRef<HTMLDivElement, TetrisShapeProps>(
                             cell ? (
                                 <div
                                     key={j}
-                                    className="rounded-sm"
+                                    onClick={handleClick}
+                                    className="rounded-sm cursor-move"
                                     style={{
                                         width: 'var(--cell-size, 33px)',
                                         height: 'var(--cell-size, 33px)',
                                         backgroundColor: color,
                                         border: '1px solid #1a202c',
                                         boxSizing: 'border-box',
+                                        pointerEvents: 'auto',
+                                        boxShadow: (isHovered && !isDragging) ? 'inset 0 0 0 2px rgba(96, 165, 250, 0.6)' : 'none',
+                                        transition: 'box-shadow 0.2s ease',
                                     }}
                                 />
-                            ) : null
+                            ) : (
+                                <div
+                                    key={j}
+                                    style={{
+                                        width: 'var(--cell-size, 33px)',
+                                        height: 'var(--cell-size, 33px)',
+                                        pointerEvents: 'none',
+                                    }}
+                                />
+                            )
                         )}
                     </div>
                 ))}

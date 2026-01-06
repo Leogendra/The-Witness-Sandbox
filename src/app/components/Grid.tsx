@@ -44,6 +44,12 @@ export const Grid: React.FC<GridProps> = ({ size, editionMode }) => {
     if (!clientOffset || !containerRef.current) return;
     
     const { pattern, type, color, pieceId } = item;
+    
+    // Safety check: ensure pattern exists and is valid
+    if (!pattern || !Array.isArray(pattern) || pattern.length === 0 || !pattern[0]) {
+      return;
+    }
+    
     const rect = containerRef.current.getBoundingClientRect();
     const padding = 8; // p-2 = 8px padding
 
@@ -165,6 +171,12 @@ export const Grid: React.FC<GridProps> = ({ size, editionMode }) => {
     const rect = containerRef.current.getBoundingClientRect();
     const padding = 8;
     const { pattern } = dragItem;
+    
+    // Safety check: ensure pattern exists and is valid
+    if (!pattern || !Array.isArray(pattern) || pattern.length === 0 || !pattern[0]) {
+      return new Set();
+    }
+    
     const pointerOffset = dragItem.pointerOffset || { x: 0, y: 0 };
     
     const patternCols = pattern[0].length;
@@ -486,31 +498,47 @@ const PieceOverlay: React.FC<PieceOverlayProps> = ({ piece, cellSize, onRemove, 
     onRotate();
   };
 
-  // Calculate bounding box of the piece accounting for gaps between cells
-  const gap = 2; // gap-0.5 in Tailwind = 2px
   const cols = piece.pattern[0].length;
   const rows = piece.pattern.length;
-  const width = cols * cellSize - (cols - 1) * gap;
-  const height = rows * cellSize - (rows - 1) * gap;
 
   return (
     <div
       ref={drag}
-      onClick={handleClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="absolute cursor-move z-30"
+      className="absolute z-30"
       style={{
         left: `${piece.col * cellSize + 8}px`,
         top: `${piece.row * cellSize + 8}px`,
-        width: `${width}px`,
-        height: `${height}px`,
-        opacity: isDragging ? 0.5 : 1,
-        boxShadow: isHovered ? 'inset 0 0 0 2px rgba(96, 165, 250, 0.8), 0 0 8px rgba(96, 165, 250, 0.6)' : 'none',
-        borderRadius: '4px',
-        transition: 'box-shadow 0.2s ease',
+        pointerEvents: 'none',
       }}
-    />
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Render individual hit-test zones for each block */}
+      {piece.pattern.map((row, i) => (
+        row.map((cell, j) => {
+          if (!cell) return null;
+          const blockId = `${i}-${j}`;
+          return (
+            <div
+              key={blockId}
+              onClick={handleClick}
+              className="absolute cursor-move"
+              style={{
+                left: `${j * cellSize}px`,
+                top: `${i * cellSize}px`,
+                width: `${cellSize - 2}px`,
+                height: `${cellSize - 2}px`,
+                opacity: isDragging ? 0.5 : 1,
+                boxShadow: (isHovered && !isDragging) ? 'inset 0 0 0 2px rgba(96, 165, 250, 0.8), 0 0 8px rgba(96, 165, 250, 0.6)' : 'none',
+                borderRadius: '4px',
+                transition: 'box-shadow 0.2s ease',
+                pointerEvents: 'auto',
+              }}
+            />
+          );
+        })
+      ))}
+    </div>
   );
 };
 
