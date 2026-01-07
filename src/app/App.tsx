@@ -61,7 +61,7 @@ export default function App() {
                 <div className="min-h-screen bg-gray-900 pt-8 pl-5 pr-5">
                     <div className="max-w-6xl mx-auto">
                         <h1 className="text-4xl text-white text-center mb-8">
-                            The Witness Sandbox
+                            The Witness Tetris Sandbox
                         </h1>
 
                         <div className="bg-white rounded-xl shadow-2xl p-8">
@@ -158,7 +158,6 @@ export default function App() {
                             <div className="mt-8 p-4 bg-blue-50 rounded-lg">
                                 <h3 className="font-semibold text-blue-900 mb-2">How to use:</h3>
                                 <ul className="text-sm text-blue-800 space-y-1">
-                                    <li>• Select grid size</li>
                                     <li>• Toggle edition mode to draw walls on grid edges, or markers on cells</li>
                                     <li>• Drag shapes to move them or drag outside to remove</li>
                                     <li>• Click shapes to rotate them 90°</li>

@@ -16,7 +16,6 @@ interface GridProps {
     cols: number;
     editionMode: boolean;
     onToggleEditionMode: () => void;
-    // Optional overrides for sizing
     gridCellSize?: number;
     gridPaddingSize?: number;
 }
@@ -37,6 +36,8 @@ export const Grid: React.FC<GridProps> = ({ rows, cols, editionMode, onToggleEdi
     const [walls, setWalls] = useState<Set<string>>(new Set());
     const [markedCells, setMarkedCells] = useState<Set<string>>(new Set());
     const [cellMinis, setCellMinis] = useState<Map<string, { pattern: number[][]; color: string }>>(new Map());
+    const [hoveredCell, setHoveredCell] = useState<string | null>(null);
+    const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
     const gridCtx = useContext(GridContext);
 
@@ -81,9 +82,11 @@ export const Grid: React.FC<GridProps> = ({ rows, cols, editionMode, onToggleEdi
             let rowCell = Math.round(yInGrid / (cellSize + gapSize));
             if (colCell < 0 || colCell >= cols || rowCell < 0 || rowCell >= rows) return;
             const cellId = `${rowCell}-${colCell}`;
+            // Deep-clone the pattern to preserve current rotation state at drop time
+            const clonedPattern: number[][] = pattern.map((r: number[]) => [...r]);
             setCellMinis(prev => {
                 const next = new Map(prev);
-                next.set(cellId, { pattern, color });
+                next.set(cellId, { pattern: clonedPattern, color });
                 return next;
             });
             // Replace the white marker with the mini if it exists
@@ -180,6 +183,7 @@ export const Grid: React.FC<GridProps> = ({ rows, cols, editionMode, onToggleEdi
         setPieces([]);
         setWalls(new Set());
         setMarkedCells(new Set());
+        setCellMinis(new Map());
     };
 
     const toggleMarkedCell = (cellId: string) => {
@@ -260,6 +264,23 @@ export const Grid: React.FC<GridProps> = ({ rows, cols, editionMode, onToggleEdi
     };
 
     const hoverCells = getHoverCells();
+
+    // Edition mode: compute hovered cell while dragging to guide mini placement
+    const getEditionHoverCellId = (): string | null => {
+        if (!editionMode || !containerRef.current) return null;
+        // If dragging, compute from pointer; else, use mouse-hover state
+        if (isDragging && dragClientOffset) {
+            const rect = containerRef.current.getBoundingClientRect();
+            const xInGrid = dragClientOffset.x - rect.left - containerPadding;
+            const yInGrid = dragClientOffset.y - rect.top - containerPadding;
+            let colCell = Math.round(xInGrid / (cellSize + gapSize));
+            let rowCell = Math.round(yInGrid / (cellSize + gapSize));
+            if (colCell < 0 || colCell >= cols || rowCell < 0 || rowCell >= rows) return null;
+            return `${rowCell}-${colCell}`;
+        }
+        return hoveredCell;
+    };
+    const editionHoverId = getEditionHoverCellId();
 
     // Compute cell colors based on pieces
     const getCellColor = (row: number, col: number): string | null => {
@@ -355,6 +376,7 @@ export const Grid: React.FC<GridProps> = ({ rows, cols, editionMode, onToggleEdi
                             const isHovered = hoverCells.has(`${rowIndex}-${colIndex}`);
                             const cellId = `${rowIndex}-${colIndex}`;
                             const isMarked = markedCells.has(cellId);
+                            const isEditionHover = editionMode && editionHoverId === cellId;
                             const mini = cellMinis.get(cellId);
                             const miniBlock = Math.floor(cellSize / 5);
                             return (
@@ -365,10 +387,12 @@ export const Grid: React.FC<GridProps> = ({ rows, cols, editionMode, onToggleEdi
                                         backgroundColor: cellColor || gridCellColor,
                                         border: `1px solid #1a202c`,
                                         borderRadius: 0,
-                                        boxShadow: isHovered ? 'inset 0 0 0 2px rgba(96, 165, 250, 0.6)' : 'none',
+                                        boxShadow: isHovered || isEditionHover ? 'inset 0 0 0 2px rgba(96, 165, 250, 0.7), 0 0 8px rgba(96, 165, 250, 0.35)' : 'none',
                                         cursor: editionMode ? 'pointer' : 'default',
                                     }}
                                     onClick={editionMode ? () => toggleMarkedCell(cellId) : undefined}
+                                    onMouseEnter={editionMode ? () => setHoveredCell(cellId) : undefined}
+                                    onMouseLeave={editionMode ? () => setHoveredCell(prev => (prev === cellId ? null : prev)) : undefined}
                                 >
                                     {mini && mini.pattern && mini.pattern.length > 0 && mini.pattern[0] && (
                                         <div
@@ -441,14 +465,21 @@ export const Grid: React.FC<GridProps> = ({ rows, cols, editionMode, onToggleEdi
                                 return (
                                     <div
                                         key={wallId}
-                                        className="absolute cursor-pointer hover:bg-blue-400 transition-colors z-10"
+                                        className="absolute cursor-pointer transition-colors z-10"
                                         style={{
                                             left: `${left}px`,
                                             top: `${top}px`,
                                             width: `${cellSize}px`,
                                             height: `${thickness}px`,
-                                            backgroundColor: isWall ? wallColor : 'transparent',
+                                            backgroundColor: isWall
+                                                ? wallColor
+                                                : (hoveredEdgeId === wallId ? 'rgba(96, 165, 250, 0.35)' : 'transparent'),
+                                            boxShadow: hoveredEdgeId === wallId
+                                                ? 'inset 0 0 0 2px rgba(96, 165, 250, 0.7), 0 0 8px rgba(96, 165, 250, 0.35)'
+                                                : 'none',
                                         }}
+                                        onMouseEnter={() => setHoveredEdgeId(wallId)}
+                                        onMouseLeave={() => setHoveredEdgeId(prev => (prev === wallId ? null : prev))}
                                         onClick={() => toggleWall(wallId)}
                                     />
                                 );
@@ -472,14 +503,21 @@ export const Grid: React.FC<GridProps> = ({ rows, cols, editionMode, onToggleEdi
                                 return (
                                     <div
                                         key={wallId}
-                                        className="absolute cursor-pointer hover:bg-blue-400 transition-colors z-10"
+                                        className="absolute cursor-pointer transition-colors z-10"
                                         style={{
                                             left: `${left}px`,
                                             top: `${top}px`,
                                             width: `${thickness}px`,
                                             height: `${cellSize}px`,
-                                            backgroundColor: isWall ? wallColor : 'transparent',
+                                            backgroundColor: isWall
+                                                ? wallColor
+                                                : (hoveredEdgeId === wallId ? 'rgba(96, 165, 250, 0.35)' : 'transparent'),
+                                            boxShadow: hoveredEdgeId === wallId
+                                                ? 'inset 0 0 0 2px rgba(96, 165, 250, 0.7), 0 0 8px rgba(96, 165, 250, 0.35)'
+                                                : 'none',
                                         }}
+                                        onMouseEnter={() => setHoveredEdgeId(wallId)}
+                                        onMouseLeave={() => setHoveredEdgeId(prev => (prev === wallId ? null : prev))}
                                         onClick={() => toggleWall(wallId)}
                                     />
                                 );
