@@ -1,13 +1,12 @@
-# The Witness Sandbox
+# The Witness Tetris Sandbox
 A web-based sandbox for solving [The Witness](http://store.steampowered.com/app/210970/) Tetris puzzles. Place, rotate, and experiment with Tetris pieces on customizable grids.
 
 ## Features
-- Configurable grid sizes (4x4, 5x5, 6x6)
+- Configurable grid size
 - Drag-and-drop piece placement with snapping
 - Click to rotate pieces
-- Mark cells and draw walls in edition mode
-- Piece overlapping support
-- JSON-based piece configuration
+- Custom piece creation with color and pattern design
+- Edition mode: Edit the grid by drawing walls and putting pieces on cells
 
 ## Technologies
 - React
