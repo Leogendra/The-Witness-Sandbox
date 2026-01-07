@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Grid } from './components/Grid';
-import { TETROMINOS, TetrominoType, getEnabledPieces } from './components/TetrisShape';
+import { PIECES, getEnabledPieces } from './components/TetrisShape';
 import { PaletteShape } from './components/PaletteShape';
 import { GridProvider } from './components/GridContext';
 import { ShapeCreator, CustomPiece } from './components/ShapeCreator';
+
+const PALETTE_SHAPE_CELL_SIZE = 25;
+
 
 export default function App() {
     const [gridRows, setGridRows] = useState<number>(5);
@@ -30,7 +33,7 @@ export default function App() {
         localStorage.setItem('customShapes', JSON.stringify(customShapes));
     }, [customShapes]);
 
-    const tetrominoTypes: TetrominoType[] = getEnabledPieces();
+    const defaultPiecesIds: string[] = getEnabledPieces();
 
     const handleSaveShape = (shape: CustomPiece) => {
         setCustomShapes(prev => {
@@ -55,25 +58,38 @@ export default function App() {
     return (
         <DndProvider backend={HTML5Backend}>
             <GridProvider>
-                <div className="min-h-screen bg-gray-900 p-8">
+                <div className="min-h-screen bg-gray-900 pt-8 pl-5 pr-5">
                     <div className="max-w-6xl mx-auto">
                         <h1 className="text-4xl text-white text-center mb-8">
                             The Witness Sandbox
                         </h1>
 
                         <div className="bg-white rounded-xl shadow-2xl p-8">
-                            <div className="grid lg:grid-cols-2 gap-8">
+                            <div className="grid lg:grid-cols-2 gap-2">
                                 {/* Tetris shapes and creator */}
                                 <div className="space-y-6">
                                     <div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            {/* Custom Shapes First */}
+                                        <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(120px,1fr))]">
+                                            {/* Preset shapes */}
+                                            {defaultPiecesIds.map((pieceId) => (
+                                                <div key={pieceId} className="flex flex-col items-center gap-2">
+                                                    <PaletteShape
+                                                        type={pieceId}
+                                                        color={PIECES[pieceId].color}
+                                                        initialPattern={PIECES[pieceId].pattern}
+                                                        cellSize={PALETTE_SHAPE_CELL_SIZE}
+                                                    />
+                                                </div>
+                                            ))}
+
+                                            {/* Custom shapes */}
                                             {customShapes.map((shape) => (
                                                 <div key={shape.id} className="flex flex-col items-center gap-2 group relative">
                                                     <PaletteShape
                                                         type={shape.id}
                                                         color={shape.color}
                                                         initialPattern={shape.pattern}
+                                                        cellSize={PALETTE_SHAPE_CELL_SIZE}
                                                     />
                                                     {/* Delete button on hover */}
                                                     <button
@@ -85,17 +101,6 @@ export default function App() {
                                                     >
                                                         x
                                                     </button>
-                                                </div>
-                                            ))}
-
-                                            {/* Preset Shapes */}
-                                            {tetrominoTypes.map((type) => (
-                                                <div key={type} className="flex flex-col items-center gap-2">
-                                                    <PaletteShape
-                                                        type={type}
-                                                        color={TETROMINOS[type].color}
-                                                        initialPattern={TETROMINOS[type].pattern}
-                                                    />
                                                 </div>
                                             ))}
                                         </div>

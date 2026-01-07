@@ -114,13 +114,8 @@ export const ShapeCreator: React.FC<ShapeCreatorProps> = ({ onSaveShape, existin
                                 type="color"
                                 value={selectedColor}
                                 onChange={(e) => setSelectedColor(e.target.value)}
-                                className="w-full h-10 rounded cursor-pointer"
+                                className="w-10 h-11 rounded cursor-pointer border-0 p-0 m-0"
                             />
-                        </div>
-
-                        {/* Grid Size Control */}
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Grid Size: 6x6</label>
                         </div>
 
                         {/* Pattern Grid */}
