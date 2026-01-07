@@ -96,10 +96,10 @@ export const ShapeCreator: React.FC<ShapeCreatorProps> = ({ onSaveShape, existin
     };
 
     return (
-        <div className="w-full">
+        <div className="w-full flex flex-col items-center">
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
-                    <Button className="w-full mb-4">Create New Shape</Button>
+                    <Button className="px-10 py-2 mb-4">Create New Shape</Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md">
                     <DialogHeader>

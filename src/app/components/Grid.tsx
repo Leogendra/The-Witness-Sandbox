@@ -36,6 +36,7 @@ export const Grid: React.FC<GridProps> = ({ rows, cols, editionMode, onToggleEdi
     const [pieces, setPieces] = useState<PlacedPiece[]>([]);
     const [walls, setWalls] = useState<Set<string>>(new Set());
     const [markedCells, setMarkedCells] = useState<Set<string>>(new Set());
+    const [cellMinis, setCellMinis] = useState<Map<string, { pattern: number[][]; color: string }>>(new Map());
     const containerRef = useRef<HTMLDivElement | null>(null);
     const gridCtx = useContext(GridContext);
 
@@ -71,6 +72,29 @@ export const Grid: React.FC<GridProps> = ({ rows, cols, editionMode, onToggleEdi
 
         const rect = containerRef.current.getBoundingClientRect();
         const padding = containerPadding; // effective padding
+
+        // Edition mode: drop a miniature of the piece into the nearest cell center
+        if (editionMode) {
+            const xInGrid = clientOffset.x - rect.left - padding;
+            const yInGrid = clientOffset.y - rect.top - padding;
+            let colCell = Math.round(xInGrid / (cellSize + gapSize));
+            let rowCell = Math.round(yInGrid / (cellSize + gapSize));
+            if (colCell < 0 || colCell >= cols || rowCell < 0 || rowCell >= rows) return;
+            const cellId = `${rowCell}-${colCell}`;
+            setCellMinis(prev => {
+                const next = new Map(prev);
+                next.set(cellId, { pattern, color });
+                return next;
+            });
+            // Replace the white marker with the mini if it exists
+            setMarkedCells(prev => {
+                if (!prev.has(cellId)) return prev;
+                const next = new Set(prev);
+                next.delete(cellId);
+                return next;
+            });
+            return;
+        }
 
         // Compute pointer offset (where in the piece did user grab it)
         const pointerOffset = item.pointerOffset || { x: 0, y: 0 };
@@ -159,6 +183,17 @@ export const Grid: React.FC<GridProps> = ({ rows, cols, editionMode, onToggleEdi
     };
 
     const toggleMarkedCell = (cellId: string) => {
+        // First check if there's a mini piece - remove it if present
+        if (cellMinis.has(cellId)) {
+            setCellMinis(prev => {
+                const next = new Map(prev);
+                next.delete(cellId);
+                return next;
+            });
+            return;
+        }
+        
+        // Otherwise toggle the white marker
         setMarkedCells(prev => {
             const newMarked = new Set(prev);
             if (newMarked.has(cellId)) {
@@ -278,10 +313,8 @@ export const Grid: React.FC<GridProps> = ({ rows, cols, editionMode, onToggleEdi
     const [{ isOver }, dropRef] = useDrop(() => ({
         accept: 'tetromino',
         drop: (item, monitor) => {
-            if (!editionMode) {
-                const clientOffset = monitor.getClientOffset();
-                handleDrop(item, clientOffset);
-            }
+            const clientOffset = monitor.getClientOffset();
+            handleDrop(item, clientOffset);
             return { dropped: true };
         },
         collect: (monitor) => ({
@@ -322,6 +355,8 @@ export const Grid: React.FC<GridProps> = ({ rows, cols, editionMode, onToggleEdi
                             const isHovered = hoverCells.has(`${rowIndex}-${colIndex}`);
                             const cellId = `${rowIndex}-${colIndex}`;
                             const isMarked = markedCells.has(cellId);
+                            const mini = cellMinis.get(cellId);
+                            const miniBlock = Math.floor(cellSize / 5);
                             return (
                                 <div
                                     key={cellId}
@@ -335,6 +370,36 @@ export const Grid: React.FC<GridProps> = ({ rows, cols, editionMode, onToggleEdi
                                     }}
                                     onClick={editionMode ? () => toggleMarkedCell(cellId) : undefined}
                                 >
+                                    {mini && mini.pattern && mini.pattern.length > 0 && mini.pattern[0] && (
+                                        <div
+                                            className="absolute"
+                                            style={{
+                                                top: '50%',
+                                                left: '50%',
+                                                transform: 'translate(-50%, -50%)',
+                                                width: `${mini.pattern[0].length * miniBlock}px`,
+                                                height: `${mini.pattern.length * miniBlock}px`,
+                                                pointerEvents: 'none',
+                                            }}
+                                        >
+                                            {mini.pattern.map((r, i) => (
+                                                r.map((v, j) => v ? (
+                                                    <div
+                                                        key={`${i}-${j}`}
+                                                        className="absolute"
+                                                        style={{
+                                                            left: `${j * miniBlock}px`,
+                                                            top: `${i * miniBlock}px`,
+                                                            width: `${miniBlock - 1}px`,
+                                                            height: `${miniBlock - 1}px`,
+                                                            backgroundColor: mini.color,
+                                                            borderRadius: '1px',
+                                                        }}
+                                                    />
+                                                ) : null)
+                                            ))}
+                                        </div>
+                                    )}
                                     {isMarked && (
                                         <div
                                             className="absolute z-30"
@@ -503,7 +568,7 @@ export const Grid: React.FC<GridProps> = ({ rows, cols, editionMode, onToggleEdi
                 <button
                     onClick={onToggleEditionMode}
                     className={`px-4 py-2 rounded-lg transition-colors ${editionMode
-                        ? 'bg-purple-600 text-white shadow-lg'
+                        ? 'bg-purple-600 text-white shadow-lg hover:bg-purple-700'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                         }`}
                 >
