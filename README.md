@@ -19,22 +19,22 @@ A web-based sandbox for solving [The Witness](http://store.steampowered.com/app/
   <img src="examples/solution_3.png" alt="Solution Example" width="100px" style="border-radius: 4px;"/>
 </p>
 
+## Demo
+
+The website is available at [https://witness.gatienh.fr/](https://witness.gatienh.fr/).  
+Here's a quick demo of how to use it:
+
+<!-- add gif centered in a paragraph -->
+<p align="center">
+  <img width="300px" style="border-radius: 10px;" src="examples/solution_3_demo.gif" alt="Demo" />
+</p>
+
 ## Features
 - Configurable grid size
 - Drag-and-drop piece placement with snapping
 - Click to rotate pieces
 - Custom piece creation with color and pattern design
 - Edition mode: Edit the grid by drawing walls and putting pieces on cells
-
-## Demo
-
-The website is available at [https://witness.gatienh.fr/](https://witness.gatienh.fr/). Here's a quick demo of how to use it:
-
-<p align="center">
-  <video width="200px" style="border-radius: 10px;" autoplay loop muted>
-    <source src="examples/solution_3_demo.mp4" type="video/mp4">
-  </video>
-</p>
 
 ## Technologies
 - React
